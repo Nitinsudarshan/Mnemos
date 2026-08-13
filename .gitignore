@@ -9,3 +9,5 @@ vault/
 .mnemos/
 .venv/
 __pycache__/
+
+piper-voices/

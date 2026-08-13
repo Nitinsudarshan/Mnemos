@@ -6,7 +6,7 @@ retrieval. Run with `python -m backend.cli <command> ...` from the repo root.
 import argparse
 from pathlib import Path
 
-from backend import llm, retrieval, vault
+from backend import llm, retrieval, vault, voice
 
 
 def cmd_init(args):
@@ -83,6 +83,51 @@ def cmd_ask(args):
             print(f"  - {r.note_title} ({r.note_path})")
 
 
+def cmd_transcribe(args):
+    try:
+        text = voice.transcribe_audio(args.audio_file)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        return
+    print(text if text else "(no speech detected)")
+
+
+def cmd_speak(args):
+    try:
+        path = voice.synthesize_to_wav(args.text, args.out)
+    except voice.VoiceConfigError as e:
+        print(f"Error: {e}")
+        return
+    print(f"Wrote {path}")
+
+
+def cmd_voice_ask(args):
+    try:
+        result = voice.voice_ask(
+            args.audio_file,
+            output_wav_path=args.out,
+            k=args.k,
+            model=args.model,
+            speak=not args.no_speak,
+        )
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        return
+    except (voice.VoiceConfigError, llm.LLMConnectionError) as e:
+        print(f"Error: {e}")
+        return
+
+    print(f"Heard: {result.transcript}")
+    print()
+    print(result.answer_text)
+    if result.sources:
+        print("\nSources:")
+        for r in result.sources:
+            print(f"  - {r.note_title} ({r.note_path})")
+    if result.answer_audio_path:
+        print(f"\nSpoken answer written to: {result.answer_audio_path}")
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="mnemos", description="Mnemos vault CLI (step 1: storage only)")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -121,6 +166,23 @@ def build_parser():
     p_ask.add_argument("--k", type=int, default=5, help="Number of note chunks to retrieve (default 5)")
     p_ask.add_argument("--model", default=None, help="Override MNEMOS_LLM_MODEL for this call")
     p_ask.set_defaults(func=cmd_ask)
+
+    p_transcribe = sub.add_parser("transcribe", help="Transcribe an audio file to text (Whisper)")
+    p_transcribe.add_argument("audio_file")
+    p_transcribe.set_defaults(func=cmd_transcribe)
+
+    p_speak = sub.add_parser("speak", help="Synthesize text to a WAV file (Piper)")
+    p_speak.add_argument("text")
+    p_speak.add_argument("--out", default="speech.wav", help="Output WAV path (default speech.wav)")
+    p_speak.set_defaults(func=cmd_speak)
+
+    p_voice_ask = sub.add_parser("voice-ask", help="Voice in, grounded answer, voice out")
+    p_voice_ask.add_argument("audio_file", help="Path to a recorded question (wav/mp3/m4a/etc.)")
+    p_voice_ask.add_argument("--out", default=None, help="Output WAV path for the spoken answer")
+    p_voice_ask.add_argument("--k", type=int, default=5)
+    p_voice_ask.add_argument("--model", default=None, help="Override MNEMOS_LLM_MODEL for this call")
+    p_voice_ask.add_argument("--no-speak", action="store_true", help="Skip TTS, text answer only")
+    p_voice_ask.set_defaults(func=cmd_voice_ask)
 
     return parser
 

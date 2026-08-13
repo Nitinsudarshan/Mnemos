@@ -2,3 +2,5 @@ PyYAML>=6.0
 lancedb>=0.37.1
 sentence-transformers>=5.7.0
 requests>=2.31.0
+faster-whisper>=1.2.1
+piper-tts>=1.6.1
