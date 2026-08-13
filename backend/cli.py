@@ -6,7 +6,7 @@ retrieval. Run with `python -m backend.cli <command> ...` from the repo root.
 import argparse
 from pathlib import Path
 
-from backend import vault
+from backend import retrieval, vault
 
 
 def cmd_init(args):
@@ -49,6 +49,26 @@ def cmd_list(args):
         print(path)
 
 
+def cmd_reindex(args):
+    stats = retrieval.reindex()
+    print(f"Scanned: {stats.notes_scanned}")
+    print(f"Reindexed (new/changed): {stats.notes_reindexed}")
+    print(f"Skipped (unchanged): {stats.notes_skipped_unchanged}")
+    print(f"Chunks written: {stats.chunks_written}")
+
+
+def cmd_search(args):
+    results = retrieval.search(args.query, k=args.k)
+    if not results:
+        print("No results. Have you run `python -m backend.cli reindex`?")
+        return
+    for i, r in enumerate(results, 1):
+        print(f"[{i}] {r.note_title}  ({r.note_path})  distance={r.score:.4f}")
+        snippet = r.text.strip().replace("\n", " ")
+        print(f"    {snippet[:200]}{'...' if len(snippet) > 200 else ''}")
+        print()
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="mnemos", description="Mnemos vault CLI (step 1: storage only)")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -73,6 +93,14 @@ def build_parser():
     p_list = sub.add_parser("list", help="List notes in the vault")
     p_list.add_argument("--folder", choices=vault.VAULT_FOLDERS)
     p_list.set_defaults(func=cmd_list)
+
+    p_reindex = sub.add_parser("reindex", help="Embed new/changed vault notes into LanceDB")
+    p_reindex.set_defaults(func=cmd_reindex)
+
+    p_search = sub.add_parser("search", help="Semantic search over the vault")
+    p_search.add_argument("query")
+    p_search.add_argument("--k", type=int, default=5, help="Number of results (default 5)")
+    p_search.set_defaults(func=cmd_search)
 
     return parser
 
