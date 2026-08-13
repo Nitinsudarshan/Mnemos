@@ -6,7 +6,7 @@ retrieval. Run with `python -m backend.cli <command> ...` from the repo root.
 import argparse
 from pathlib import Path
 
-from backend import retrieval, vault
+from backend import llm, retrieval, vault
 
 
 def cmd_init(args):
@@ -69,6 +69,20 @@ def cmd_search(args):
         print()
 
 
+def cmd_ask(args):
+    try:
+        result = llm.ask(args.query, k=args.k, model=args.model)
+    except llm.LLMConnectionError as e:
+        print(f"Error: {e}")
+        return
+
+    print(result.answer)
+    if result.sources:
+        print("\nSources:")
+        for r in result.sources:
+            print(f"  - {r.note_title} ({r.note_path})")
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="mnemos", description="Mnemos vault CLI (step 1: storage only)")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -101,6 +115,12 @@ def build_parser():
     p_search.add_argument("query")
     p_search.add_argument("--k", type=int, default=5, help="Number of results (default 5)")
     p_search.set_defaults(func=cmd_search)
+
+    p_ask = sub.add_parser("ask", help="Ask a question, answered from your notes via Ollama")
+    p_ask.add_argument("query")
+    p_ask.add_argument("--k", type=int, default=5, help="Number of note chunks to retrieve (default 5)")
+    p_ask.add_argument("--model", default=None, help="Override MNEMOS_LLM_MODEL for this call")
+    p_ask.set_defaults(func=cmd_ask)
 
     return parser
 
