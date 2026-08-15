@@ -54,7 +54,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend import llm, retrieval, vault, voice
+from backend import llm, notion, retrieval, vault, voice
 
 app = FastAPI(title="Mnemos", description="Local second-brain backend")
 
@@ -249,3 +249,31 @@ async def voice_ask_endpoint(
         "audio_base64": audio_b64,
         "mime_type": "audio/wav" if audio_b64 else None,
     }
+
+
+# ---------------------------------------------------------------------------
+# MCP connectors (step 6) — read-only for now, so no confirm-before-send
+# gate is needed here yet. That gate belongs on write/send actions, none of
+# which exist across any connector at this point in the build.
+# ---------------------------------------------------------------------------
+
+@app.get("/connectors/notion/search")
+def notion_search_endpoint(q: str):
+    try:
+        result = notion.search(q)
+    except notion.NotionConfigError as e:
+        raise HTTPException(500, str(e))
+    except notion.NotionConnectionError as e:
+        raise HTTPException(502, str(e))
+    return {"result": result}
+
+
+@app.get("/connectors/notion/fetch")
+def notion_fetch_endpoint(id: str):
+    try:
+        result = notion.fetch(id)
+    except notion.NotionConfigError as e:
+        raise HTTPException(500, str(e))
+    except notion.NotionConnectionError as e:
+        raise HTTPException(502, str(e))
+    return {"result": result}
