@@ -132,21 +132,28 @@ Mnemos/
 
 ## Backlog (flagged during the build, not urgent, not yet actioned)
 
-1. Verify Ctrl+Space dictation end-to-end — code changed from Alt+Space, not yet tested. **Do this first.**
+1. Verify Ctrl+Space dictation end-to-end. **Do this first.** Correction to the earlier status here: a repo audit found the Alt+Space → Ctrl+Space switch had never actually landed in git — `lib.rs`, `index.html`, and the `main.js` comment were all still on Alt+Space. That's now fixed in code (`shell/src-tauri/src/lib.rs`'s `dictation_shortcut`, plus the matching hint text/comments) and pushed, but it still has NOT been run on real Windows hardware — this session has no Windows machine, microphone, or display to test with. Checklist for whoever verifies it next:
+   - `cd shell && npm run tauri dev` (Terminal B, backend already running in Terminal A)
+   - Click into Notepad (or any other app), hold **Ctrl+Space**, speak a full sentence, release
+   - Confirm: the red "🎙 Listening..." indicator appears on press and disappears on release
+   - Confirm: no OS-level side effect fires on the bare Ctrl press alone (unlike Alt, Ctrl has no Windows menu-focus meaning, so this should be clean — but hasn't been observed on real hardware yet)
+   - Confirm: the transcribed text is typed into Notepad, and it isn't garbled/cut off the way the old Alt+Space attempts were
+   - Try it with focus in at least one other app (browser address bar, Slack) to rule out an app-specific quirk
+   - Confirm **Ctrl+Shift+Space** (show/hide) still works independently and doesn't get confused with the new **Ctrl+Space** binding
 2. Re-assess transcription quality after the hotkey fix — the garbled output ("I want her to llll .........") is suspected to be caused by the Alt+Space focus-steal interrupting the recording, not the Whisper `base` model itself. If quality is still poor on a clean, uninterrupted Ctrl+Space recording, try Whisper `small` instead of `base`.
 3. Vocabulary/jargon bias — Whisper's `initial_prompt` parameter could fix known mishearings (e.g. "Tauri" → "starting"), inspired by Oscar's custom-vocabulary feature (screenshots reviewed from `navgurukul/oscar_ai_transcription`, `oscar-fe`, `oscar-be` — those repos themselves are cloud/account-based SaaS architecture, not reusable code, but the UI/UX patterns are worth borrowing selectively)
 4. Optional local LLM cleanup pass on dictated text before injection (Oscar's "Faithful/Polished/Concise" idea) — fully local via the already-running `gemma4:latest`, no new cloud dependency, fits the local-first philosophy
 5. Indicator window polish — currently a plain red box; Oscar's floating pill design (hotkey hint chip + mode dropdown) is a nicer reference direction, purely cosmetic
 6. Hold vs. Toggle hotkey mode as a user setting — currently hardcoded to hold-only
 
-## Next major milestone: Step 6 — MCP connectors
+## Step 6 — MCP connectors (in progress)
 
 Per the original build order in the project brief, add one connector at a time, verify each before the next, lowest-risk first:
 
-1. **Notion** — read-only search/fetch first (official hosted MCP server exists at `mcp.notion.com`, per earlier research — integrate directly rather than build a wrapper)
-2. **Google Docs** — same read-only-first pattern
-3. **Calendar**
-4. **Email**
+1. **Notion** — `backend/notion.py`. Read-only search/fetch against Notion's official hosted MCP server (`mcp.notion.com`) — integrated directly rather than building a wrapper. Scaffolded and confirmed to actually reach the real endpoint and fail cleanly; not yet verified against a real workspace (needs an OAuth access token — see README).
+2. **Google Docs** — `backend/google_docs.py`. Same read-only search/fetch shape, but against Google's own Drive v3 + Docs v1 REST APIs via OAuth, since no equivalent single hosted MCP server exists for Google Docs the way it does for Notion. Scaffolded and unit-tested (ID/URL resolution, text extraction, clean error paths); not yet verified against a real Google account (needs an OAuth client — see README).
+3. **Calendar** — not started
+4. **Email** — not started
 5. **Messaging (WhatsApp/Slack)** last — explicitly the highest-risk category per the brief ("a bad send is public"); no official WhatsApp MCP server exists, only community-maintained options (e.g. `lharries/whatsapp-mcp`), factor that maturity gap into sequencing
 
 **Non-negotiable safety rule** (unchanged since the original brief): every action that creates, edits, sends, or shares something external must pause for explicit user confirmation before firing. Read-only actions (search, fetch, check) run without confirmation. Applies to every MCP integration without exception. Local vault note creation was already ungated as of Step 1 and that precedent stands — this rule is specifically about external services.

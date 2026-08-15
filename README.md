@@ -14,7 +14,7 @@ Second Brain — a voice-enabled local AI assistant built around an Obsidian vau
 
 **Step 5: Desktop app (Tauri shell).** Done. A FastAPI HTTP layer (`backend/server.py`) exposes every CLI capability over localhost, and a Tauri v2 app (`shell/`) wraps it in a real desktop window: a chat UI, a global show/hide hotkey, in-app voice input, and universal dictation — hold a hotkey from any other application, speak, and the transcribed text is typed directly into whatever field had focus. See `HANDOFF.md` for the full sub-step breakdown, dev workflow, and open items.
 
-**Step 6 (current): MCP connectors.** In progress. `backend/notion.py` adds read-only `search`/`fetch` against Notion's official hosted MCP server (`mcp.notion.com`) — the first and lowest-risk connector per the build order. Not yet verified end-to-end against a real Notion workspace; see the module docstring and Setup below before relying on it. Google Docs, Calendar, Email, and Messaging follow the same read-only-first pattern, in that order.
+**Step 6 (current): MCP connectors.** In progress. `backend/notion.py` adds read-only `search`/`fetch` against Notion's official hosted MCP server (`mcp.notion.com`); `backend/google_docs.py` adds the same read-only `search`/`fetch` shape against Google's own Drive/Docs REST APIs (no equivalent single hosted MCP server exists for Google Docs). Neither has been verified end-to-end against a real account yet; see each module's docstring and Setup below before relying on them. Calendar, Email, and Messaging follow the same read-only-first pattern next, in that order.
 
 ### Setup
 
@@ -49,6 +49,8 @@ For voice: `MNEMOS_WHISPER_MODEL` (default `base` — try `small` or `medium` fo
 
 For the Notion connector: `MNEMOS_NOTION_TOKEN` (required, no default) and optionally `MNEMOS_NOTION_MCP_URL` (default `https://mcp.notion.com/mcp`).
 
+For the Google Docs connector: `MNEMOS_GOOGLE_CREDENTIALS` (path to an OAuth client secret JSON, required, no default) and optionally `MNEMOS_GOOGLE_TOKEN` (path to the cached OAuth token, default `.mnemos/google_token.json`).
+
 ### Notion connector (Step 6)
 
 Read-only search and fetch against your Notion workspace, via Notion's official hosted MCP server rather than a bespoke wrapper around Notion's REST API. Nothing is created, edited, or sent — per the project's non-negotiable safety rule, only write/send actions need a confirm-before-send gate, and this first pass simply doesn't implement any write tool calls yet.
@@ -65,6 +67,21 @@ python -m backend.cli notion-fetch "<page id or url>"
 ```
 
 **Not yet verified end-to-end** — no Notion workspace/token was available while writing this connector. Confirm it against a real workspace before relying on it, and paste back the actual output (same verification standard as every other step in this build).
+
+### Google Docs connector (Step 6)
+
+Read-only search and fetch against Google Docs, via Google's own Drive v3 (search) and Docs v1 (fetch) REST APIs — there's no single official hosted MCP server for Google Docs the way there is for Notion, so this connector talks to Google directly instead. Same rule as Notion: nothing is created, edited, or shared, so no confirm-before-send gate is needed yet.
+
+1. In [Google Cloud Console](https://console.cloud.google.com), create a project (or reuse one), enable the **Google Drive API** and **Google Docs API**, then create an OAuth client ID of type **Desktop app**. Download the resulting client secret JSON.
+2. Point Mnemos at it and run a search or fetch — the first call opens your browser for one-time consent, then caches the resulting token:
+
+```bash
+export MNEMOS_GOOGLE_CREDENTIALS="/path/to/client_secret.json"
+python -m backend.cli google-docs-search "quarterly plan"
+python -m backend.cli google-docs-fetch "<doc id or full docs.google.com URL>"
+```
+
+**Not yet verified end-to-end** — no Google account/OAuth client was available while writing this connector. Confirm it against a real account before relying on it, and paste back the actual output.
 
 ```bash
 # Create the vault folder structure (Notes/, Meetings/, Research/, Reference/, Journal/)
@@ -106,4 +123,8 @@ python -m backend.cli voice-ask question.wav --no-speak   # text answer only, sk
 # Notion connector (Step 6, read-only): search and fetch
 python -m backend.cli notion-search "roadmap notes"
 python -m backend.cli notion-fetch "<page id or url>"
+
+# Google Docs connector (Step 6, read-only): search and fetch
+python -m backend.cli google-docs-search "quarterly plan"
+python -m backend.cli google-docs-fetch "<doc id or url>"
 ```

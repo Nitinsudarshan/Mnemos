@@ -6,7 +6,7 @@ retrieval. Run with `python -m backend.cli <command> ...` from the repo root.
 import argparse
 from pathlib import Path
 
-from backend import llm, notion, retrieval, vault, voice
+from backend import google_docs, llm, notion, retrieval, vault, voice
 
 
 def cmd_init(args):
@@ -146,6 +146,24 @@ def cmd_notion_fetch(args):
     print(result)
 
 
+def cmd_google_docs_search(args):
+    try:
+        result = google_docs.search(args.query)
+    except (google_docs.GoogleDocsConfigError, google_docs.GoogleDocsConnectionError) as e:
+        print(f"Error: {e}")
+        return
+    print(result)
+
+
+def cmd_google_docs_fetch(args):
+    try:
+        result = google_docs.fetch(args.id)
+    except (google_docs.GoogleDocsConfigError, google_docs.GoogleDocsConnectionError) as e:
+        print(f"Error: {e}")
+        return
+    print(result)
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="mnemos", description="Mnemos vault CLI (step 1: storage only)")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -209,6 +227,14 @@ def build_parser():
     p_notion_fetch = sub.add_parser("notion-fetch", help="Fetch a Notion page/database by id or url (step 6, read-only)")
     p_notion_fetch.add_argument("id")
     p_notion_fetch.set_defaults(func=cmd_notion_fetch)
+
+    p_gdocs_search = sub.add_parser("google-docs-search", help="Search your Google Docs (step 6, read-only)")
+    p_gdocs_search.add_argument("query")
+    p_gdocs_search.set_defaults(func=cmd_google_docs_search)
+
+    p_gdocs_fetch = sub.add_parser("google-docs-fetch", help="Fetch a Google Doc by id or url (step 6, read-only)")
+    p_gdocs_fetch.add_argument("id")
+    p_gdocs_fetch.set_defaults(func=cmd_google_docs_fetch)
 
     return parser
 

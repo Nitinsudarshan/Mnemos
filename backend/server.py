@@ -54,7 +54,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend import llm, notion, retrieval, vault, voice
+from backend import google_docs, llm, notion, retrieval, vault, voice
 
 app = FastAPI(title="Mnemos", description="Local second-brain backend")
 
@@ -275,5 +275,27 @@ def notion_fetch_endpoint(id: str):
     except notion.NotionConfigError as e:
         raise HTTPException(500, str(e))
     except notion.NotionConnectionError as e:
+        raise HTTPException(502, str(e))
+    return {"result": result}
+
+
+@app.get("/connectors/google-docs/search")
+def google_docs_search_endpoint(q: str):
+    try:
+        result = google_docs.search(q)
+    except google_docs.GoogleDocsConfigError as e:
+        raise HTTPException(500, str(e))
+    except google_docs.GoogleDocsConnectionError as e:
+        raise HTTPException(502, str(e))
+    return {"result": result}
+
+
+@app.get("/connectors/google-docs/fetch")
+def google_docs_fetch_endpoint(id: str):
+    try:
+        result = google_docs.fetch(id)
+    except google_docs.GoogleDocsConfigError as e:
+        raise HTTPException(500, str(e))
+    except google_docs.GoogleDocsConnectionError as e:
         raise HTTPException(502, str(e))
     return {"result": result}
