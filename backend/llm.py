@@ -33,8 +33,9 @@ import requests
 from backend import retrieval
 
 DEFAULT_BASE_URL = "http://localhost:11434/v1"
-DEFAULT_MODEL = "llama3.1"  # assumes `ollama pull llama3.1` was run — override
-                             # via MNEMOS_LLM_MODEL if you pulled something else
+DEFAULT_MODEL = "gemma4:latest"  # the model actually in use on this setup —
+                                   # override via MNEMOS_LLM_MODEL if you pull
+                                   # a different one later
 REQUEST_TIMEOUT_SECONDS = 120
 
 SYSTEM_PROMPT = (

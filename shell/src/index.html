@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mnemos</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: system-ui, sans-serif;
+        background: #1e1e1e;
+        color: #eee;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+        padding: 1rem;
+      }
+      h1 {
+        margin: 0 0 0.75rem 0;
+        font-size: 1.3rem;
+      }
+      #conversation {
+        flex: 1;
+        overflow-y: auto;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        background: #252525;
+      }
+      .msg {
+        margin-bottom: 1rem;
+        white-space: pre-wrap;
+        line-height: 1.4;
+      }
+      .msg.question { color: #9cd1ff; font-weight: 600; }
+      .msg.answer { color: #eee; }
+      .msg.error { color: #f44336; }
+      .sources {
+        margin-top: 0.4rem;
+        font-size: 0.85rem;
+        color: #999;
+      }
+      .sources ul { margin: 0.25rem 0 0 0; padding-left: 1.2rem; }
+      form {
+        display: flex;
+        gap: 0.5rem;
+      }
+      input[type="text"] {
+        flex: 1;
+        padding: 0.6rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        border: 1px solid #3a3a3a;
+        background: #2a2a2a;
+        color: #eee;
+      }
+      button {
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 6px;
+        border: none;
+        background: #3d7eff;
+        color: white;
+      }
+      button:disabled {
+        background: #555;
+        cursor: not-allowed;
+      }
+      button.recording {
+        background: #e53935;
+      }
+      audio {
+        display: none;
+      }
+      #backend-status {
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+      }
+      .ok { color: #4caf50; }
+      .err { color: #f44336; }
+      #hotkey-hint {
+        font-size: 0.75rem;
+        color: #777;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Mnemos</h1>
+    <div id="backend-status">Checking backend...</div>
+    <div id="conversation"></div>
+    <form id="ask-form">
+      <input type="text" id="query-input" placeholder="Ask your vault..." autocomplete="off" />
+      <button type="submit" id="ask-btn">Ask</button>
+      <button type="button" id="record-btn">🎙 Record</button>
+    </form>
+    <div id="hotkey-hint">
+      Ctrl+Shift+Space: show/hide this window &nbsp;•&nbsp;
+      Hold Alt+Space anywhere: dictate into the focused field
+    </div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
