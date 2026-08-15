@@ -197,7 +197,7 @@ async function sendVoiceAsk(blob) {
 }
 
 // 5e-ii: dictation into whatever field currently has OS focus (not our own
-// window). Alt+Space press/release is handled in Rust, which shows/hides
+// window). Ctrl+Space press/release is handled in Rust, which shows/hides
 // the indicator window and emits these two events; the actual mic capture
 // stays in JS, reusing the exact MediaRecorder pipeline already proven in
 // 5d, rather than adding a separate native audio-capture crate.

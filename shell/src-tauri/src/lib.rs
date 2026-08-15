@@ -23,13 +23,21 @@ pub fn run() {
     // Ctrl+Shift+Space: show/hide the main window.
     let toggle_shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::Space);
 
-    // Alt+Space: push-to-talk dictation. Press starts recording (shows the
+    // Ctrl+Space: push-to-talk dictation. Press starts recording (shows the
     // indicator window + tells the main window's JS to start capturing mic
     // audio via MediaRecorder — reusing the exact pipeline proven in 5d
     // rather than adding a separate native audio-capture crate). Release
     // stops recording, hides the indicator, and the JS side takes it from
     // there (transcribe -> inject_text).
-    let dictation_shortcut = Shortcut::new(Some(Modifiers::ALT), Code::Space);
+    //
+    // Originally Alt+Space, rejected: it's a native Windows-reserved combo
+    // (opens the window system menu), and a standalone Alt press has its
+    // own OS meaning (menu-bar focus). Real key-press timing isn't
+    // perfectly simultaneous, so Windows would sometimes catch a bare Alt
+    // moment before Space joined it, stealing focus mid-recording and
+    // producing garbled, cut-off transcripts. Ctrl+Space doesn't have
+    // either problem.
+    let dictation_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::Space);
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
